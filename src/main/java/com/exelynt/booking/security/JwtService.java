@@ -23,15 +23,21 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private long expiration;
 
+    private SecretKey signingKey;
+
     @PostConstruct
-    public void validateSecret() {
+    public void initializeSigningKey() {
         if (secret == null || secret.isBlank()) {
             throw new IllegalStateException("JWT secret must not be empty");
         }
 
-        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+
+        if (keyBytes.length < 32) {
             throw new IllegalStateException("JWT secret must be at least 32 characters long");
         }
+
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(UserPrincipal userPrincipal) {
@@ -41,7 +47,7 @@ public class JwtService {
                 .claim("userId", userPrincipal.getId())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSigningKey())
+                .signWith(signingKey)
                 .compact();
     }
 
@@ -60,13 +66,9 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(getSigningKey())
+                .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 }

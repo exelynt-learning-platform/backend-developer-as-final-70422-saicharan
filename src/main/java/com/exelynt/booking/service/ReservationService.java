@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.exelynt.booking.dto.ReservationRequest;
 import com.exelynt.booking.dto.ReservationResponse;
@@ -63,6 +64,7 @@ public class ReservationService {
         return toResponse(reservation);
     }
 
+    @Transactional(readOnly = true)
     public Page<ReservationResponse> getAll(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,
             Pageable pageable, UserPrincipal currentUser) {
         validateSort(pageable.getSort());

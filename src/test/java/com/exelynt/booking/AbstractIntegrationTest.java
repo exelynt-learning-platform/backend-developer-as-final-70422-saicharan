@@ -10,8 +10,9 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import com.exelynt.booking.dto.LoginRequest;
 import com.exelynt.booking.dto.LoginResponse;
-
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,8 +25,9 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected MockMvc mockMvc;
 
-    @Autowired
-    protected ObjectMapper objectMapper;
+    protected final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     protected String loginAndGetToken(String email, String password) throws Exception {
         LoginRequest request = new LoginRequest(email, password);
@@ -37,7 +39,8 @@ public abstract class AbstractIntegrationTest {
                 .andReturn();
 
         LoginResponse response = objectMapper.readValue(
-                result.getResponse().getContentAsString(), LoginResponse.class);
+                result.getResponse().getContentAsString(),
+                LoginResponse.class);
 
         return response.getToken();
     }
