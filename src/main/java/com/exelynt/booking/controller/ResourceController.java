@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,16 +39,22 @@ public class ResourceController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResourceResponse> create(@Valid @RequestBody ResourceRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(resourceService.create(request));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(resourceService.create(request));
     }
 
     @PutMapping("/{id}")
-    public ResourceResponse update(@PathVariable Long id, @Valid @RequestBody ResourceRequest request) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResourceResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody ResourceRequest request) {
         return resourceService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         resourceService.delete(id);
         return ResponseEntity.noContent().build();

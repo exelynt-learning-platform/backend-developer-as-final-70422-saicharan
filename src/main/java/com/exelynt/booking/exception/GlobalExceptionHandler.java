@@ -117,21 +117,22 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneric(
-            Exception ex,
-            HttpServletRequest request) {
+public ResponseEntity<ErrorResponse> handleGeneric(
+        Exception ex,
+        HttpServletRequest request) {
 
-        log.error(
-                "Unexpected error while processing request: {}",
-                request.getRequestURI(),
-                ex);
+    log.warn(
+            "Unhandled exception while processing request {}: {}",
+            request.getRequestURI(),
+            ex.getMessage(),
+            ex);
 
-        return buildResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred",
-                request,
-                null);
-    }
+    return buildResponse(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            "An unexpected error occurred",
+            request,
+            null);
+}
 
     private ResponseEntity<ErrorResponse> buildResponse(
             HttpStatus status,

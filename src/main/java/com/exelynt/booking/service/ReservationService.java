@@ -89,10 +89,10 @@ public class ReservationService {
         return toResponse(reservationRepository.save(reservation));
     }
 
-    public void delete(Long id) {
-        reservationRepository.delete(findReservationById(id));
-    }
-
+   public void delete(Long id) {
+    Reservation reservation = findReservationById(id);
+    reservationRepository.delete(reservation);
+  }
     private void checkOwnership(Reservation reservation, UserPrincipal currentUser) {
         boolean isOwner = reservation.getUser().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getUser().getRole() == Role.ADMIN;
