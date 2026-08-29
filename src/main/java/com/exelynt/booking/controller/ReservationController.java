@@ -52,7 +52,7 @@ public class ReservationController {
             @RequestParam(required = false) ReservationStatus status,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @PageableDefault(page = 0, size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,           
             @AuthenticationPrincipal UserPrincipal currentUser) {
         return reservationService.getAll(status, minPrice, maxPrice, pageable, currentUser);
     }
