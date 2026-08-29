@@ -1,7 +1,7 @@
 package com.exelynt.booking.service;
 
 import java.math.BigDecimal;
-import java.util.Set;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,15 +31,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    private static final Set<String> ALLOWED_SORT_PROPERTIES =
-            Set.of("id", "startTime", "endTime", "price", "status", "createdAt");
+   private static final List<String> ALLOWED_SORT_PROPERTIES =
+        List.of("id", "startTime", "endTime", "price", "status", "createdAt");
 
     private final ReservationRepository reservationRepository;
     private final ResourceRepository resourceRepository;
 
-    public ReservationResponse create(ReservationRequest request, UserPrincipal currentUser) {
+    public ReservationResponse create(
+            ReservationRequest request,
+            UserPrincipal currentUser) {
+
+        if (request.getStartTime() == null || request.getEndTime() == null) {
+            throw new InvalidReservationException(
+                    "Start time and end time are required");
+        }
+
         if (!request.getEndTime().isAfter(request.getStartTime())) {
-            throw new InvalidReservationException("End time must be after start time");
+            throw new InvalidReservationException(
+                    "End time must be after start time");
         }
 
         Resource resource = resourceRepository.findById(request.getResourceId())
@@ -58,29 +67,53 @@ public class ReservationService {
         return toResponse(reservationRepository.save(reservation));
     }
 
-    public ReservationResponse getById(Long id, UserPrincipal currentUser) {
+    public ReservationResponse getById(
+            Long id,
+            UserPrincipal currentUser) {
+
         Reservation reservation = findReservationById(id);
         checkOwnership(reservation, currentUser);
+
         return toResponse(reservation);
     }
 
     @Transactional(readOnly = true)
-    public Page<ReservationResponse> getAll(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,
-            Pageable pageable, UserPrincipal currentUser) {
+    public Page<ReservationResponse> getAll(
+            ReservationStatus status,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Pageable pageable,
+            UserPrincipal currentUser) {
+
         validateSort(pageable.getSort());
 
-        Long userId = currentUser.getUser().getRole() == Role.USER ? currentUser.getId() : null;
-        Specification<Reservation> spec = buildSpecification(status, minPrice, maxPrice, userId);
+        Long userId = currentUser.getUser().getRole() == Role.USER
+                ? currentUser.getId()
+                : null;
 
-        return reservationRepository.findAll(spec, pageable).map(this::toResponse);
+        Specification<Reservation> spec =
+                buildSpecification(status, minPrice, maxPrice, userId);
+
+        return reservationRepository.findAll(spec, pageable)
+                .map(this::toResponse);
     }
 
-    public ReservationResponse update(Long id, ReservationUpdateRequest request) {
+    public ReservationResponse update(
+            Long id,
+            ReservationUpdateRequest request) {
+
+        if (request.getStartTime() == null || request.getEndTime() == null) {
+            throw new InvalidReservationException(
+                    "Start time and end time are required");
+        }
+
         if (!request.getEndTime().isAfter(request.getStartTime())) {
-            throw new InvalidReservationException("End time must be after start time");
+            throw new InvalidReservationException(
+                    "End time must be after start time");
         }
 
         Reservation reservation = findReservationById(id);
+
         reservation.setStartTime(request.getStartTime());
         reservation.setEndTime(request.getEndTime());
         reservation.setPrice(request.getPrice());
@@ -89,42 +122,73 @@ public class ReservationService {
         return toResponse(reservationRepository.save(reservation));
     }
 
-   public void delete(Long id) {
-    Reservation reservation = findReservationById(id);
-    reservationRepository.delete(reservation);
-  }
-    private void checkOwnership(Reservation reservation, UserPrincipal currentUser) {
-        boolean isOwner = reservation.getUser().getId().equals(currentUser.getId());
-        boolean isAdmin = currentUser.getUser().getRole() == Role.ADMIN;
+    public void delete(Long id) {
+        Reservation reservation = findReservationById(id);
+        reservationRepository.delete(reservation);
+    }
+
+    private void checkOwnership(
+            Reservation reservation,
+            UserPrincipal currentUser) {
+
+        boolean isOwner =
+                reservation.getUser().getId().equals(currentUser.getId());
+
+        boolean isAdmin =
+                currentUser.getUser().getRole() == Role.ADMIN;
 
         if (!isOwner && !isAdmin) {
-            throw new AccessDeniedException("You do not have permission to access this reservation");
+            throw new AccessDeniedException(
+                    "You do not have permission to access this reservation");
         }
     }
 
     private void validateSort(Sort sort) {
         for (Sort.Order order : sort) {
             if (!ALLOWED_SORT_PROPERTIES.contains(order.getProperty())) {
-                throw new IllegalArgumentException("Invalid sort property: " + order.getProperty());
+                throw new IllegalArgumentException(
+                        "Invalid sort property: " + order.getProperty());
             }
         }
     }
 
-    private Specification<Reservation> buildSpecification(ReservationStatus status, BigDecimal minPrice,
-            BigDecimal maxPrice, Long userId) {
-        Specification<Reservation> spec = (root, query, cb) -> cb.conjunction();
+    private Specification<Reservation> buildSpecification(
+            ReservationStatus status,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Long userId) {
+
+        Specification<Reservation> spec =
+                (root, query, cb) -> cb.conjunction();
 
         if (status != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("status"), status));
+            spec = spec.and(
+                    (root, query, cb) ->
+                            cb.equal(root.get("status"), status));
         }
+
         if (minPrice != null) {
-            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("price"), minPrice));
+            spec = spec.and(
+                    (root, query, cb) ->
+                            cb.greaterThanOrEqualTo(
+                                    root.get("price"),
+                                    minPrice));
         }
+
         if (maxPrice != null) {
-            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("price"), maxPrice));
+            spec = spec.and(
+                    (root, query, cb) ->
+                            cb.lessThanOrEqualTo(
+                                    root.get("price"),
+                                    maxPrice));
         }
+
         if (userId != null) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("user").get("id"), userId));
+            spec = spec.and(
+                    (root, query, cb) ->
+                            cb.equal(
+                                    root.get("user").get("id"),
+                                    userId));
         }
 
         return spec;
@@ -132,10 +196,13 @@ public class ReservationService {
 
     private Reservation findReservationById(Long id) {
         return reservationRepository.findById(id)
-                .orElseThrow(() -> new ReservationNotFoundException("Reservation not found with id: " + id));
+                .orElseThrow(() -> new ReservationNotFoundException(
+                        "Reservation not found with id: " + id));
     }
 
-    private ReservationResponse toResponse(Reservation reservation) {
+    private ReservationResponse toResponse(
+            Reservation reservation) {
+
         return ReservationResponse.builder()
                 .id(reservation.getId())
                 .userId(reservation.getUser().getId())

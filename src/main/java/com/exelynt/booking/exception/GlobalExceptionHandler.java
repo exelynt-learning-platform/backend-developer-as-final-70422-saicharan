@@ -4,8 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -21,40 +20,59 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(
             ResourceNotFoundException ex,
             HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
+
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),
+                request,
+                null);
     }
 
     @ExceptionHandler(ReservationNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleReservationNotFound(
             ReservationNotFoundException ex,
             HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
+
+        return buildResponse(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage(),
+                request,
+                null);
     }
 
     @ExceptionHandler(InvalidReservationException.class)
     public ResponseEntity<ErrorResponse> handleInvalidReservation(
             InvalidReservationException ex,
             HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
+
+        return buildResponse(
+                HttpStatus.BAD_REQUEST,
+                ex.getMessage(),
+                request,
+                null);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(
             InvalidCredentialsException ex,
             HttpServletRequest request) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request, null);
+
+        return buildResponse(
+                HttpStatus.UNAUTHORIZED,
+                ex.getMessage(),
+                request,
+                null);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(
             AccessDeniedException ex,
             HttpServletRequest request) {
+
         return buildResponse(
                 HttpStatus.FORBIDDEN,
                 "You do not have permission to access this resource",
@@ -85,7 +103,8 @@ public class GlobalExceptionHandler {
             MethodArgumentTypeMismatchException ex,
             HttpServletRequest request) {
 
-        String message = "Invalid value for parameter '" + ex.getName() + "'";
+        String message =
+                "Invalid value for parameter '" + ex.getName() + "'";
 
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
@@ -98,6 +117,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex,
             HttpServletRequest request) {
+
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 ex.getMessage(),
@@ -109,6 +129,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnreadable(
             HttpMessageNotReadableException ex,
             HttpServletRequest request) {
+
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "Malformed request body",
@@ -116,23 +137,17 @@ public class GlobalExceptionHandler {
                 null);
     }
 
-    @ExceptionHandler(Exception.class)
-public ResponseEntity<ErrorResponse> handleGeneric(
-        Exception ex,
-        HttpServletRequest request) {
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex,
+            HttpServletRequest request) {
 
-    log.warn(
-            "Unhandled exception while processing request {}: {}",
-            request.getRequestURI(),
-            ex.getMessage(),
-            ex);
-
-    return buildResponse(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "An unexpected error occurred",
-            request,
-            null);
-}
+        return buildResponse(
+                HttpStatus.CONFLICT,
+                "Request conflicts with existing data",
+                request,
+                null);
+    }
 
     private ResponseEntity<ErrorResponse> buildResponse(
             HttpStatus status,

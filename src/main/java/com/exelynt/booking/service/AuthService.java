@@ -1,9 +1,9 @@
 package com.exelynt.booking.service;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 import com.exelynt.booking.dto.LoginRequest;
@@ -26,8 +26,10 @@ public class AuthService {
 
         try {
             authResult = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
-        } catch (AuthenticationException e) {
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()));
+        } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
