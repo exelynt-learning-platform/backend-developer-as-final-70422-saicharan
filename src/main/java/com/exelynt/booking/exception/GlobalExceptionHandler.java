@@ -25,11 +25,7 @@ public class GlobalExceptionHandler {
             ResourceNotFoundException ex,
             HttpServletRequest request) {
 
-        return buildResponse(
-                HttpStatus.NOT_FOUND,
-                ex.getMessage(),
-                request,
-                null);
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
     @ExceptionHandler(ReservationNotFoundException.class)
@@ -37,11 +33,7 @@ public class GlobalExceptionHandler {
             ReservationNotFoundException ex,
             HttpServletRequest request) {
 
-        return buildResponse(
-                HttpStatus.NOT_FOUND,
-                ex.getMessage(),
-                request,
-                null);
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidReservationException.class)
@@ -49,11 +41,7 @@ public class GlobalExceptionHandler {
             InvalidReservationException ex,
             HttpServletRequest request) {
 
-        return buildResponse(
-                HttpStatus.BAD_REQUEST,
-                ex.getMessage(),
-                request,
-                null);
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
@@ -61,11 +49,7 @@ public class GlobalExceptionHandler {
             InvalidCredentialsException ex,
             HttpServletRequest request) {
 
-        return buildResponse(
-                HttpStatus.UNAUTHORIZED,
-                ex.getMessage(),
-                request,
-                null);
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -76,8 +60,7 @@ public class GlobalExceptionHandler {
         return buildResponse(
                 HttpStatus.FORBIDDEN,
                 "You do not have permission to access this resource",
-                request,
-                null);
+                request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -106,11 +89,7 @@ public class GlobalExceptionHandler {
         String message =
                 "Invalid value for parameter '" + ex.getName() + "'";
 
-        return buildResponse(
-                HttpStatus.BAD_REQUEST,
-                message,
-                request,
-                null);
+        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -118,11 +97,7 @@ public class GlobalExceptionHandler {
             IllegalArgumentException ex,
             HttpServletRequest request) {
 
-        return buildResponse(
-                HttpStatus.BAD_REQUEST,
-                ex.getMessage(),
-                request,
-                null);
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -133,8 +108,7 @@ public class GlobalExceptionHandler {
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
                 "Malformed request body",
-                request,
-                null);
+                request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -145,8 +119,15 @@ public class GlobalExceptionHandler {
         return buildResponse(
                 HttpStatus.CONFLICT,
                 "Request conflicts with existing data",
-                request,
-                null);
+                request);
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request) {
+
+        return buildResponse(status, message, request, null);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(
@@ -155,15 +136,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request,
             Map<String, String> fieldErrors) {
 
-        ErrorResponse body = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(status.value())
-                .error(status.getReasonPhrase())
-                .message(message)
-                .path(request.getRequestURI())
-                .fieldErrors(fieldErrors)
-                .build();
-
-        return ResponseEntity.status(status).body(body);
+        return ResponseEntity.status(status).body(
+                ErrorResponse.builder()
+                        .timestamp(LocalDateTime.now())
+                        .status(status.value())
+                        .error(status.getReasonPhrase())
+                        .message(message)
+                        .path(request.getRequestURI())
+                        .fieldErrors(fieldErrors)
+                        .build());
     }
 }

@@ -1,6 +1,7 @@
 package com.exelynt.booking.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -41,15 +42,7 @@ public class ReservationService {
             ReservationRequest request,
             UserPrincipal currentUser) {
 
-        if (request.getStartTime() == null || request.getEndTime() == null) {
-            throw new InvalidReservationException(
-                    "Start time and end time are required");
-        }
-
-        if (!request.getEndTime().isAfter(request.getStartTime())) {
-            throw new InvalidReservationException(
-                    "End time must be after start time");
-        }
+        validateTimeRange(request.getStartTime(), request.getEndTime());
 
         Resource resource = resourceRepository.findById(request.getResourceId())
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -102,15 +95,7 @@ public class ReservationService {
             Long id,
             ReservationUpdateRequest request) {
 
-        if (request.getStartTime() == null || request.getEndTime() == null) {
-            throw new InvalidReservationException(
-                    "Start time and end time are required");
-        }
-
-        if (!request.getEndTime().isAfter(request.getStartTime())) {
-            throw new InvalidReservationException(
-                    "End time must be after start time");
-        }
+        validateTimeRange(request.getStartTime(), request.getEndTime());
 
         Reservation reservation = findReservationById(id);
 
@@ -125,6 +110,21 @@ public class ReservationService {
     public void delete(Long id) {
         Reservation reservation = findReservationById(id);
         reservationRepository.delete(reservation);
+    }
+
+    private void validateTimeRange(
+            LocalDateTime startTime,
+            LocalDateTime endTime) {
+
+        if (startTime == null || endTime == null) {
+            throw new InvalidReservationException(
+                    "Start time and end time are required");
+        }
+
+        if (!endTime.isAfter(startTime)) {
+            throw new InvalidReservationException(
+                    "End time must be after start time");
+        }
     }
 
     private void checkOwnership(
